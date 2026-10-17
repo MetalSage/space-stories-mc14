@@ -13,7 +13,7 @@ using Robust.Shared.Serialization.TypeSerializers.Implementations.Custom;
 namespace Content.Shared.Weapons.Ranged.Components;
 
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState(fieldDeltas: true), AutoGenerateComponentPause]
-[Access(typeof(SharedGunSystem), typeof(RMCSelectiveFireSystem), typeof(GunBalanceSystem), typeof(SharedHandsSystem), typeof(RMCWieldableSystem))] // Stories-GunBalance
+[Access(typeof(SharedGunSystem), typeof(RMCSelectiveFireSystem), typeof(GunBalanceSystem), typeof(SharedHandsSystem), typeof(RMCWieldableSystem), typeof(AkimboSystem))] // Stories-GunBalance
 public sealed partial class GunComponent : Component
 {
     #region Sound

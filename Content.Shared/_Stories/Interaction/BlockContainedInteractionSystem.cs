@@ -2,7 +2,6 @@ using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction;
 using Content.Shared.Interaction.Events;
 using Content.Shared.Nutrition.Components;
-using Content.Shared.Verbs;
 using Robust.Shared.Containers;
 
 namespace Content.Shared._Stories.Interaction;
@@ -19,8 +18,6 @@ public sealed class BlockContainedInteractionSystem : EntitySystem
         SubscribeLocalEvent<BlockContainedInteractionComponent, UseInHandEvent>(OnUseInHand);
         SubscribeLocalEvent<BlockContainedInteractionComponent, InteractUsingEvent>(OnInteractUsing);
         SubscribeLocalEvent<BlockContainedInteractionComponent, GettingUsedAttemptEvent>(OnGettingUsedAttempt);
-        SubscribeLocalEvent<BlockContainedInteractionComponent, GetVerbsEvent<ActivationVerb>>(OnGetActivationVerbs);
-        SubscribeLocalEvent<BlockContainedInteractionComponent, GetVerbsEvent<AlternativeVerb>>(OnGetAlternativeVerbs);
     }
 
     public bool IsBlocked(EntityUid uid, EntityUid user)
@@ -82,20 +79,5 @@ public sealed class BlockContainedInteractionSystem : EntitySystem
 
         if (IsBlocked(ent, args.User))
             args.Cancel();
-    }
-
-    private void OnGetActivationVerbs(Entity<BlockContainedInteractionComponent> ent, ref GetVerbsEvent<ActivationVerb> args)
-    {
-        if (IsBlocked(ent, args.User))
-            args.Verbs.Clear();
-    }
-
-    private void OnGetAlternativeVerbs(Entity<BlockContainedInteractionComponent> ent, ref GetVerbsEvent<AlternativeVerb> args)
-    {
-        if (HasComp<FoodComponent>(ent) && HasUtensil(args.User))
-            return;
-
-        if (IsBlocked(ent, args.User))
-            args.Verbs.Clear();
     }
 }

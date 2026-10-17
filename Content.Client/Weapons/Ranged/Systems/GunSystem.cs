@@ -53,6 +53,7 @@ public sealed partial class GunSystem : SharedGunSystem
     [Dependency] private readonly GunPredictionSystem _gunPrediction = default!;
     [Dependency] private readonly RMCLagCompensationSystem _rmcLagCompensation = default!;
     [Dependency] private readonly VehicleTurretMuzzleOffsetSystem _vehicleTurretMuzzleOffset = default!;
+    [Dependency] private readonly GunBalanceSystem _gunBalance = default!;
     // RMC14
 
     public static readonly EntProtoId HitscanProto = "HitscanEffect";
@@ -197,24 +198,9 @@ public sealed partial class GunSystem : SharedGunSystem
             return;
         }
 
-        if (gun.NextFire > Timing.CurTime)
-            return;
-
         // Stories-GunBalance-Start
-        if (TryComp<UseDelayComponent>(gunUid, out var gunUseDelay) &&
-            (_useDelay.IsDelayed((gunUid, gunUseDelay), GunBalanceSystem.GunDrawDelayId) ||
-             _useDelay.IsDelayed((gunUid, gunUseDelay), GunBalanceSystem.GunMagazineDelayId) ||
-             _useDelay.IsDelayed((gunUid, gunUseDelay), "StoriesGunCycleModeDelay")))
-        {
+        if (!_gunBalance.CanShoot(gunUid, entity, gun))
             return;
-        }
-
-        if (TryComp<MarineShooterComponent>(entity, out var shooter) &&
-            shooter.NextGlobalFire > Timing.CurTime &&
-            shooter.LastFiredGun != gunUid)
-        {
-            return;
-        }
         // Stories-GunBalance-End
 
         var mousePos = _eyeManager.PixelToMap(_inputManager.MouseScreenPosition);

@@ -25,7 +25,14 @@ public sealed partial class GunSystem
     // Stories-RMCAmmoEject-Start
     private void OnBallisticHandleState(EntityUid uid, BallisticAmmoProviderComponent component, ref AfterAutoHandleStateEvent args)
     {
-        UpdateAmmoCount(uid, prediction: false);
+        try
+        {
+            UpdateAmmoCount(uid, prediction: false);
+        }
+        catch (Exception e)
+        {
+            Log.Error($"[GunSystem] Error handling ballistic state for {ToPrettyString(uid)}: {e}");
+        }
     }
 
     private void OnBallisticAppearance(EntityUid uid, BallisticAmmoProviderComponent component, ref AppearanceChangeEvent args)

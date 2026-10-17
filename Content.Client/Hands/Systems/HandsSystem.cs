@@ -4,7 +4,6 @@ using Content.Client.DisplacementMap;
 using Content.Client.Examine;
 using Content.Client.Strip;
 using Content.Client.Verbs.UI;
-using Content.Shared._Stories.Weapons.Guns;
 using Content.Shared.Hands;
 using Content.Shared.Hands.Components;
 using Content.Shared.Hands.EntitySystems;
@@ -146,11 +145,6 @@ namespace Content.Client.Hands.Systems
             if (switchHand && handName != hands.ActiveHandId && pressedEntity == null)
             {
                 // change active hand
-                // Stories-GunBalance-Start
-                var shooter = EnsureComp<MarineShooterComponent>(ent.Owner);
-                shooter.NextGlobalFire = _timing.CurTime + TimeSpan.FromSeconds(1.1);
-                shooter.LastFiredGun = null;
-                // Stories-GunBalance-End
                 RaisePredictiveEvent(new RequestSetHandEvent(handName));
                 return;
             }

@@ -142,7 +142,7 @@ public abstract partial class SharedGunSystem
 
             if (nextIndex == 0)
             {
-                var cycleDelay = TimeSpan.FromSeconds(1.1);
+                var cycleDelay = GunBalanceSystem.GunCycleModeDelay;
                 component.NextCycleMode = curTime + cycleDelay;
                 if (component.NextFire < curTime + cycleDelay)
                 {
@@ -151,8 +151,8 @@ public abstract partial class SharedGunSystem
                 Dirty(uid, component);
 
                 var useDelay = EnsureComp<UseDelayComponent>(uid);
-                _useDelay.SetLength((uid, useDelay), cycleDelay, "StoriesGunCycleModeDelay");
-                _useDelay.TryResetDelay((uid, useDelay), false, "StoriesGunCycleModeDelay");
+                _useDelay.SetLength((uid, useDelay), cycleDelay, GunBalanceSystem.GunCycleModeDelayId);
+                _useDelay.TryResetDelay((uid, useDelay), false, GunBalanceSystem.GunCycleModeDelayId);
             }
             else
             {
@@ -193,7 +193,9 @@ public abstract partial class SharedGunSystem
         if (!HasDualPistols(uid))
         {
             var curTime = Timing.CurTime;
-            var drawDelay = GunBalanceSystem.GunDrawDelay;
+            var drawDelay = TagSystem.HasTag(uid, SidearmTag)
+                ? GunBalanceSystem.SidearmDrawDelay
+                : GunBalanceSystem.GunDrawDelay;
             var minimum = curTime + drawDelay;
 
             if (component.NextFire < minimum)

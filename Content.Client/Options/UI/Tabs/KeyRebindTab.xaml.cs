@@ -592,10 +592,22 @@ namespace Content.Client.Options.UI.Tabs
         }
 
         // Stories-KeyRebind-Start
+        private readonly List<BindButton> _occupiedToClear = new();
+        private static List<KeyBindingRegistration>? _cachedDefaultRegistrations;
+
+        public static List<KeyBindingRegistration> GetDefaultKeyBindingRegistrations(IResourceManager res)
+        {
+            if (_cachedDefaultRegistrations != null)
+                return _cachedDefaultRegistrations;
+
+            _cachedDefaultRegistrations = LoadDefaultKeyBindingRegistrations(res);
+            return _cachedDefaultRegistrations;
+        }
+
         private void LoadDefaultRegistrations()
         {
             _defaultRegistrations.Clear();
-            var defaults = LoadDefaultKeyBindingRegistrations(_res);
+            var defaults = GetDefaultKeyBindingRegistrations(_res);
             foreach (var reg in defaults)
             {
                 _defaultRegistrations.Add((reg.Function.FunctionName, reg.BaseKey, reg.Mod1, reg.Mod2, reg.Mod3));
@@ -931,18 +943,18 @@ namespace Content.Client.Options.UI.Tabs
             if (_occupiedButtons.Count > 0)
             {
                 var curTime = _timing.CurTime;
-                var toClear = new List<BindButton>();
+                _occupiedToClear.Clear();
                 foreach (var (btn, resetTime) in _occupiedButtons)
                 {
                     if (curTime >= resetTime)
                     {
                         btn.Button.Modulate = Color.White;
                         btn.UpdateText();
-                        toClear.Add(btn);
+                        _occupiedToClear.Add(btn);
                     }
                 }
 
-                foreach (var btn in toClear)
+                foreach (var btn in _occupiedToClear)
                 {
                     _occupiedButtons.Remove(btn);
                 }
@@ -1131,7 +1143,7 @@ namespace Content.Client.Options.UI.Tabs
                 return _cachedDefaultBindings;
 
             var res = IoCManager.Resolve<IResourceManager>();
-            var defaults = LoadDefaultKeyBindingRegistrations(res);
+            var defaults = GetDefaultKeyBindingRegistrations(res);
             _cachedDefaultBindings = defaults
                 .Select(b => (b.Function.FunctionName, b.BaseKey, b.Mod1, b.Mod2, b.Mod3))
                 .ToHashSet();
@@ -1166,11 +1178,8 @@ namespace Content.Client.Options.UI.Tabs
         public static void EnforceStandardMouseBindings(IInputManager inputManager)
         {
             var res = IoCManager.Resolve<IResourceManager>();
-            var defaults = LoadDefaultKeyBindingRegistrations(res);
-
-            var defaultSet = defaults
-                .Select(b => (b.Function.FunctionName, b.BaseKey, b.Mod1, b.Mod2, b.Mod3))
-                .ToHashSet();
+            var defaults = GetDefaultKeyBindingRegistrations(res);
+            var defaultSet = GetDefaultBindings();
 
             // Disable any active bindings that violate restrictions (e.g. non-default MouseLeft / MouseRight),
             // but do NOT delete them from keybinds.yml or user preferences.

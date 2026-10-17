@@ -2,6 +2,7 @@ using Content.Shared._RMC14.Armor;
 using Content.Shared._RMC14.Marines.Skills;
 using Content.Shared._RMC14.Wieldable.Components;
 using Content.Shared._RMC14.Wieldable.Events;
+using Content.Shared._Stories.Weapons.Guns;
 using Content.Shared.Hands;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Interaction.Events;
@@ -146,7 +147,7 @@ public sealed class RMCWieldableSystem : EntitySystem
     private void OnGotEquippedHand(Entity<WieldDelayComponent> wieldable, ref GotEquippedHandEvent args)
     {
         // Stories-WieldDelay-Start
-        if (wieldable.Comp.BaseDelay <= TimeSpan.FromSeconds(1.1))
+        if (wieldable.Comp.BaseDelay <= GunBalanceSystem.GunDrawDelay)
             return;
         // Stories-WieldDelay-End
 

@@ -122,25 +122,6 @@ public abstract partial class SharedHandsSystem : EntitySystem
         if (_net.IsClient && _timing.IsFirstTimePredicted)
             RaisePredictiveEvent(new RequestSetHandEvent(nextHand));
         // TrySetActiveHand((session.AttachedEntity.Value, component), nextHand);
-
-        // Stories-GunBalance-Start
-        if (session?.AttachedEntity is { } user)
-        {
-            var shooter = EnsureComp<MarineShooterComponent>(user);
-            shooter.NextGlobalFire = _timing.CurTime + TimeSpan.FromSeconds(1.1);
-            shooter.LastFiredGun = null;
-
-            if (TryGetHeldItem((user, component), nextHand, out var nextHeld) &&
-                TryComp<GunComponent>(nextHeld, out var nextGun))
-            {
-                var minFire = _timing.CurTime + TimeSpan.FromSeconds(1.1);
-                if (nextGun.NextFire < minFire)
-                {
-                    nextGun.NextFire = minFire;
-                }
-            }
-        }
-        // Stories-GunBalance-End
     }
 
     private bool DropPressed(ICommonSession? session, EntityCoordinates coords, EntityUid netEntity)

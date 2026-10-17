@@ -100,6 +100,7 @@ public abstract partial class SharedGunSystem : EntitySystem
     [Dependency] private readonly SharedRMCFlamerSystem _flamer = default!;
     [Dependency] private readonly VehicleWeaponsSystem _rmcVehicleWeapons = default!;
     [Dependency] private readonly RMCSharedWeaponControllerSystem _rmcSharedWeaponController = default!;
+    [Dependency] private readonly AkimboSystem _akimbo = default!;
 
     private const float InteractNextFire = 0.3f;
     private const double SafetyNextFire = 0.5;
@@ -205,114 +206,22 @@ public abstract partial class SharedGunSystem : EntitySystem
 
     public bool HasShootableAmmo(EntityUid gunUid)
     {
-        if (TryComp<RevolverAmmoProviderComponent>(gunUid, out var revolver))
-        {
-            return GetRevolverUnspentCount(revolver) > 0;
-        }
-
-        if (TryComp<MagazineAmmoProviderComponent>(gunUid, out _))
-        {
-            if (Containers.TryGetContainer(gunUid, "gun_chamber", out var chamberContainer))
-            {
-                foreach (var ent in chamberContainer.ContainedEntities)
-                {
-                    if (!TryComp<CartridgeAmmoComponent>(ent, out var c) || !c.Spent)
-                        return true;
-                }
-            }
-
-            if (GetMagazineEntity(gunUid) is { } magEnt)
-            {
-                if (TryComp<BallisticAmmoProviderComponent>(magEnt, out var ballistic))
-                {
-                    if (ballistic.UnspawnedCount > 0)
-                        return true;
-
-                    foreach (var ent in ballistic.Entities)
-                    {
-                        if (!TryComp<CartridgeAmmoComponent>(ent, out var c) || !c.Spent)
-                            return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        if (TryComp<BallisticAmmoProviderComponent>(gunUid, out var ballisticGun))
-        {
-            if (ballisticGun.UnspawnedCount > 0)
-                return true;
-
-            foreach (var ent in ballisticGun.Entities)
-            {
-                if (!TryComp<CartridgeAmmoComponent>(ent, out var c) || !c.Spent)
-                    return true;
-            }
-
-            return false;
-        }
-
-        if (TryComp<ChamberMagazineAmmoProviderComponent>(gunUid, out var chamberMag))
-        {
-            if (GetChamberEntity(gunUid) is { } chamberEnt &&
-                (!TryComp<CartridgeAmmoComponent>(chamberEnt, out var c) || !c.Spent))
-            {
-                return true;
-            }
-
-            if (GetMagazineEntity(gunUid) is { } magEntity)
-            {
-                var ev = new GetAmmoCountEvent();
-                RaiseLocalEvent(magEntity, ref ev);
-                if (ev.Count > 0)
-                    return true;
-            }
-
-            return false;
-        }
-
-        var ammoEv = new GetAmmoCountEvent();
-        RaiseLocalEvent(gunUid, ref ammoEv);
-        return ammoEv.Count > 0;
+        return _akimbo.HasShootableAmmo(gunUid);
     }
 
     public bool TryGetAkimboGuns(EntityUid gunUid, out Entity<AkimboComponent> akimboGun, out Entity<AkimboComponent> otherAkimboGun)
     {
-        akimboGun = default;
-        otherAkimboGun = default;
-
-        if (!TryComp(gunUid, out AkimboComponent? akimboComp))
-            return false;
-
-        akimboGun = (gunUid, akimboComp);
-
-        var parent = Transform(gunUid).ParentUid;
-        if (!parent.IsValid() || !TryComp(parent, out HandsComponent? handsComp))
-            return false;
-
-        foreach (var hand in handsComp.Hands.Keys)
-        {
-            if (_hands.GetHeldItem(parent, hand) is { } held &&
-                held != gunUid &&
-                TryComp(held, out AkimboComponent? otherComp))
-            {
-                otherAkimboGun = (held, otherComp);
-                return true;
-            }
-        }
-
-        return false;
+        return _akimbo.TryGetAkimboGuns(gunUid, out akimboGun, out otherAkimboGun);
     }
 
     public bool HasAkimboGuns(EntityUid currentGun)
     {
-        return TryGetAkimboGuns(currentGun, out _, out _);
+        return _akimbo.HasAkimboGuns(currentGun);
     }
 
     public bool HasDualPistols(EntityUid currentGun)
     {
-        return HasAkimboGuns(currentGun);
+        return _akimbo.HasDualPistols(currentGun);
     }
 
     private void OnMapInit(Entity<GunComponent> gun, ref MapInitEvent args)
@@ -414,42 +323,7 @@ public abstract partial class SharedGunSystem : EntitySystem
             gunComp = gun;
 
             // Stories-Akimbo-Start
-            if (TryGetAkimboGuns(held, out var akimbo, out var otherAkimbo) &&
-                TryComp<GunComponent>(otherAkimbo.Owner, out var otherGunComp))
-            {
-                var curTime = Timing.CurTime;
-                var activeReady = gun.NextFire <= curTime;
-                var otherReady = otherGunComp.NextFire <= curTime;
-                var activeHasAmmo = HasShootableAmmo(held);
-                var otherHasAmmo = HasShootableAmmo(otherAkimbo.Owner);
-
-                if (activeHasAmmo && !otherHasAmmo)
-                {
-                    gunEntity = held;
-                    gunComp = gun;
-                }
-                else if (!activeHasAmmo && otherHasAmmo)
-                {
-                    gunEntity = otherAkimbo.Owner;
-                    gunComp = otherGunComp;
-                }
-                else if (activeHasAmmo && otherHasAmmo)
-                {
-                    if (!activeReady && otherReady)
-                    {
-                        gunEntity = otherAkimbo.Owner;
-                        gunComp = otherGunComp;
-                    }
-                    else if (activeReady && otherReady && TryComp<MarineShooterComponent>(entity, out var shooterComp))
-                    {
-                        if (shooterComp.LastFiredGun == held)
-                        {
-                            gunEntity = otherAkimbo.Owner;
-                            gunComp = otherGunComp;
-                        }
-                    }
-                }
-            }
+            (gunEntity, gunComp) = _akimbo.SelectAkimboGun(entity, held, gun);
             // Stories-Akimbo-End
 
             return true;
@@ -728,21 +602,7 @@ public abstract partial class SharedGunSystem : EntitySystem
         RaiseLocalEvent(gunUid, ref shotEv);
 
         // Stories-MarineShooter-Start
-        var shooter = EnsureComp<MarineShooterComponent>(user);
-        shooter.LastFiredGun = gunUid;
-
-        if (TryGetAkimboGuns(gunUid, out var akimbo, out _))
-        {
-            var baseDelay = 1f / Math.Max(gun.FireRateModified, 0.1f);
-            var gunDelay = TimeSpan.FromSeconds(baseDelay / akimbo.Comp.IndividualFireRateMultiplier);
-            var marineDelay = TimeSpan.FromSeconds(baseDelay / akimbo.Comp.TotalFireRateMultiplier);
-
-            gun.NextFire = curTime + gunDelay;
-            shooter.NextGlobalFire = curTime + marineDelay;
-            DirtyField(gunUid, gun, nameof(GunComponent.NextFire));
-        }
-
-        Dirty(user, shooter);
+        _akimbo.ApplyAkimboShootDelay(gunUid, gun, user, curTime);
         // Stories-MarineShooter-End
 
         if (userImpulse && TryComp<PhysicsComponent>(user, out var userPhysics))
