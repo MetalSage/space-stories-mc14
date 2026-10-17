@@ -226,6 +226,20 @@ public abstract partial class SharedGunSystem : EntitySystem
 
     private void OnMapInit(Entity<GunComponent> gun, ref MapInitEvent args)
     {
+        // Stories-GunBalance-Start
+        if (gun.Comp.NextFire > Timing.CurTime)
+        {
+            gun.Comp.NextFire = Timing.CurTime;
+            DirtyField(gun.Owner, gun.Comp, nameof(GunComponent.NextFire));
+
+            if (TryComp<UseDelayComponent>(gun.Owner, out var useDelay))
+            {
+                var delaySys = Get<UseDelaySystem>();
+                delaySys.ResetAllDelays((gun.Owner, useDelay));
+            }
+        }
+        // Stories-GunBalance-End
+
 #if DEBUG
         if (gun.Comp.NextFire > Timing.CurTime)
             Log.Warning($"Initializing a map that contains an entity that is on cooldown. Entity: {ToPrettyString(gun)}");

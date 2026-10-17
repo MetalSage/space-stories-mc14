@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -33,9 +33,10 @@ namespace Content.Server.Database.Migrations.Postgres
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_variant_preference_profile_id",
+                name: "IX_variant_preference_profile_id_job_name",
                 table: "variant_preference",
-                column: "profile_id");
+                columns: new[] { "profile_id", "job_name" },
+                unique: true);
         }
 
         /// <inheritdoc />

@@ -148,6 +148,12 @@ namespace Content.Server.Database
                 .OnDelete(DeleteBehavior.Cascade);
             // Stories-SynthProfile-End
 
+            // Stories-SynthVariantPreference-Start
+            modelBuilder.Entity<VariantPreference>()
+                .HasIndex(v => new { v.ProfileId, v.JobName })
+                .IsUnique();
+            // Stories-SynthVariantPreference-End
+
             modelBuilder.Entity<Admin>()
                 .HasOne(p => p.AdminRank)
                 .WithMany(p => p!.Admins)

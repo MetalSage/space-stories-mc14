@@ -833,6 +833,21 @@ namespace Content.Shared.Preferences
                 _rankPreferences.Add(job, rank);
             }
 
+            var validVariants = new Dictionary<ProtoId<JobPrototype>, string?>();
+            foreach (var (jobId, variantId) in _variantPreferences)
+            {
+                if (variantId == null)
+                    continue;
+
+                if (prototypeManager.TryIndex(jobId, out JobPrototype? job) &&
+                    job.Variants != null &&
+                    job.Variants.ContainsKey(variantId))
+                {
+                    validVariants[jobId] = variantId;
+                }
+            }
+            _variantPreferences = validVariants;
+
             if (!prototypeManager.TryIndex(SquadPreference, out var squad) ||
                 !squad.TryGetComponent(out SquadTeamComponent? team, compFactory) ||
                 !team.RoundStart)
