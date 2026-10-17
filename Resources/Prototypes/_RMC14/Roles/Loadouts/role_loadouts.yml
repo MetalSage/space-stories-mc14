@@ -832,7 +832,7 @@
   id: JobRMCJobSynthetic
   points: 7
   groups:
-  - SynthGenRMC
+  - STSynthSpecializationRMC # Stories-SynthSpecialization
   - SynthBackpackRMC
   - SynthHeadwearRMC
   - SynthGlassesRMC

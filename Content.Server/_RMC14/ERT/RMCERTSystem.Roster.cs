@@ -67,6 +67,7 @@ public sealed partial class RMCERTSystem
         error = string.Empty;
         // Required slots are guaranteed first, then optional slots fill out the SS13 mob_max equivalent.
         var roles = call.Roles
+            .Where(r => r.AllowedSources == null || r.AllowedSources.Contains(request.Source)) // Stories-ERTRoleSources
             .OrderByDescending(r => r.Leader)
             .ThenByDescending(r => r.Priority)
             .ToList();

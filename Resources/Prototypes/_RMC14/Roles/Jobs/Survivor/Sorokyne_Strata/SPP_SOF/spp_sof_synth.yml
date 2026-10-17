@@ -7,6 +7,10 @@
     RMCRankSyntheticColonist: []
   icon: "RMCJobIconSPPSynth"
   spawnMenuRoleName: SPP SOF Synthetic (Sorokyne Special Survivor)
+  # Stories-SurvivorSpawnerFallback-Start
+  survivorSpawnerFallback:
+  - RMCSurvivorSPPSOFSoldier
+  # Stories-SurvivorSpawnerFallback-End
   special:
   - !type:AddComponentSpecial
     components:
@@ -23,6 +27,11 @@
       prefix: rmc-job-prefix-soro-sof-synth
     - type: AssignSquad
       squad: SquadSPP
+    # Stories-Synth-Start
+    - type: SynthGeneration
+      generation: RMCSynthGenThree
+      selectable: false
+    # Stories-Synth-End
     - type: Synth
   hidden: true
 
@@ -30,6 +39,7 @@
   parent: RMCGearSPPSOFBase
   id: RMCGearSPPSOFSynth
   equipment:
+    jumpsuit: STJumpsuitSPPSOFSynth # Stories-SynthSurvivorGear
     belt: RMCBeltMedicBagSPP
     outerClothing: RMCArmorSPPSOFSynth
     head: RMCHeadCapSPPSOF

@@ -270,6 +270,11 @@ public sealed partial class RMCERTRoleEntry
     /// </summary>
     [DataField]
     public int Priority;
+
+    // Stories-ERTRoleSources-Start
+    [DataField]
+    public List<RMCERTRequestSource>? AllowedSources;
+    // Stories-ERTRoleSources-End
 }
 
 /// <summary>

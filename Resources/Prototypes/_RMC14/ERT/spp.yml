@@ -79,6 +79,33 @@
     required: false
     roleTags: [ specialist, rifleman ]
     seatTags: [ troop ]
+  # Stories-SynthERT-Start
+  - id: synth
+    name: stories-ert-role-spp-synth
+    job: RMCSPPSynthetic
+    ghostRoleEntityPool:
+    - entity: STRandomHumanoidSPPSyntheticFriendly
+      weight: 100
+    min: 0
+    max: 1
+    required: false
+    roleTags: [ synth, medic ]
+    seatTags: [ medic, troop ]
+    priority: 40
+  - id: synthNoWhitelist
+    name: stories-ert-role-spp-synth-no-whitelist
+    job: STSPPSyntheticNoWhitelist
+    ghostRoleEntityPool:
+    - entity: STRandomHumanoidSPPSyntheticFriendlyNoWhitelist
+      weight: 100
+    min: 0
+    max: 1
+    required: false
+    allowedSources: [ Admin ]
+    roleTags: [ synth, medic ]
+    seatTags: [ medic, troop ]
+    priority: 40
+  # Stories-SynthERT-End
   announcements:
     arrival:
       title: rmc-ert-announcement-title-intercepted-transmission
@@ -171,6 +198,33 @@
     required: false
     roleTags: [ specialist, rifleman ]
     seatTags: [ troop ]
+  # Stories-SynthERT-Start
+  - id: synth
+    name: stories-ert-role-spp-synth
+    job: RMCSPPSynthetic
+    ghostRoleEntityPool:
+    - entity: STRandomHumanoidSPPSyntheticHostile
+      weight: 100
+    min: 0
+    max: 1
+    required: false
+    roleTags: [ synth, medic ]
+    seatTags: [ medic, troop ]
+    priority: 40
+  - id: synthNoWhitelist
+    name: stories-ert-role-spp-synth-no-whitelist
+    job: STSPPSyntheticNoWhitelist
+    ghostRoleEntityPool:
+    - entity: STRandomHumanoidSPPSyntheticHostileNoWhitelist
+      weight: 100
+    min: 0
+    max: 1
+    required: false
+    allowedSources: [ Admin ]
+    roleTags: [ synth, medic ]
+    seatTags: [ medic, troop ]
+    priority: 40
+  # Stories-SynthERT-End
   announcements:
     arrival:
       title: rmc-ert-announcement-title-intercepted-transmission

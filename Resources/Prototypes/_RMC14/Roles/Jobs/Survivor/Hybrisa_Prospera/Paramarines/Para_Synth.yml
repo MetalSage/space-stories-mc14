@@ -35,6 +35,11 @@
       squad: SquadPara
     - type: JobPrefix
       prefix: rmc-job-prefix-para-synth
+    # Stories-Synth-Start
+    - type: SynthGeneration
+      generation: RMCSynthGenThree
+      selectable: false
+    # Stories-Synth-End
     - type: Synth
       generation: rmc-species-synth-generation-second
   useLoadoutOfJob: RMCSyntheticColony # for inheritance

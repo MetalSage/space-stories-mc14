@@ -12,6 +12,7 @@ using Content.Server.Shuttles.Systems;
 using Content.Shared._RMC14.AlertLevel;
 using Content.Shared._RMC14.Areas;
 using Content.Shared._RMC14.Atmos;
+using Content.Shared._RMC14.CameraShake; // Stories-DropshipLaunchEffects
 using Content.Shared._RMC14.CCVar;
 using Content.Shared._RMC14.Dropship;
 using Content.Shared._RMC14.Dropship.AttachmentPoint;
@@ -23,6 +24,7 @@ using Content.Shared._RMC14.Rules;
 using Content.Shared._RMC14.Xenonids;
 using Content.Shared._RMC14.Xenonids.Announce;
 using Content.Shared.Administration.Logs;
+using Content.Shared.Buckle.Components; // Stories-DropshipLaunchEffects
 using Content.Shared.CCVar;
 using Content.Shared.Coordinates;
 using Content.Shared.Database;
@@ -52,6 +54,7 @@ public sealed class DropshipSystem : SharedDropshipSystem
     [Dependency] private readonly ISharedAdminLogManager _adminLog = default!;
     [Dependency] private readonly RMCAlertLevelSystem _alertLevel = default!;
     [Dependency] private readonly AppearanceSystem _appearance = default!;
+    [Dependency] private readonly RMCCameraShakeSystem _cameraShake = default!; // Stories-DropshipLaunchEffects
     [Dependency] private readonly IConfigurationManager _config = default!;
     [Dependency] private readonly ContainerSystem _container = default!;
     [Dependency] private readonly DoorSystem _door = default!;
@@ -174,6 +177,7 @@ public sealed class DropshipSystem : SharedDropshipSystem
 
     private void OnFTLStarted(Entity<DropshipComponent> ent, ref FTLStartedEvent args)
     {
+        ShakePassengers(ent); // Stories-DropshipLaunchEffects
         OnRefreshUI(ent, ref args);
 
         if (args.FromMapUid is { } warship && HasComp<AlmayerComponent>(warship))
@@ -215,6 +219,7 @@ public sealed class DropshipSystem : SharedDropshipSystem
     private void OnFTLCompleted(Entity<DropshipComponent> ent, ref FTLCompletedEvent args)
     {
         CompleteRestrictedDocking(ent.Owner);
+        ShakePassengers(ent); // Stories-DropshipLaunchEffects
 
         if (ent.Comp.RechargeTime is { } rechargeTime && TryComp(ent, out FTLComponent? ftl))
             ftl.StateTime = StartEndTime.FromCurTime(_timing, rechargeTime);
@@ -244,6 +249,27 @@ public sealed class DropshipSystem : SharedDropshipSystem
         ent.Comp.DepartureLocation = ent.Comp.Destination;
         Dirty(ent);
     }
+
+    // Stories-DropshipLaunchEffects-Start
+    private void ShakePassengers(Entity<DropshipComponent> dropship)
+    {
+        foreach (var session in Filter.BroadcastGrid(dropship.Owner).Recipients)
+        {
+            if (session.AttachedEntity is not { } passenger)
+                continue;
+
+            if (TryComp(passenger, out RMCCameraShakingComponent? shaking) && shaking.Shakes > 0)
+                continue;
+
+            var shakes = TryComp(passenger, out BuckleComponent? buckle) && buckle.Buckled
+                ? dropship.Comp.STBuckledPassengerCameraShakes
+                : dropship.Comp.STPassengerCameraShakes;
+
+            if (shakes > 0)
+                _cameraShake.ShakeCamera(passenger, shakes, dropship.Comp.STPassengerCameraShakeStrength);
+        }
+    }
+    // Stories-DropshipLaunchEffects-End
 
     private void OnFTLUpdated(Entity<DropshipComponent> ent, ref FTLUpdatedEvent args)
     {

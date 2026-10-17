@@ -93,6 +93,11 @@ public sealed partial class RMCPlanetMapPrototypeComponent : Component
     public Dictionary<EntProtoId, EntProtoId?>? Replacements;
     // Stories-Survivor-End
 
+    // Stories-RandomScenarioVariant-Start
+    [DataField, AutoNetworkedField]
+    public HashSet<ProtoId<JobPrototype>>? RandomScenarioVariantJobs;
+    // Stories-RandomScenarioVariant-End
+
     /// <summary>
     /// Round-start operational briefings sent to the Commanding Officer, keyed by their affiliation preference.
     /// </summary>

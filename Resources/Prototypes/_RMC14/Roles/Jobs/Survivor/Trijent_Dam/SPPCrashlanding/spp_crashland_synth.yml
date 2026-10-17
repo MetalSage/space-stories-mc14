@@ -7,6 +7,10 @@
     RMCRankSyntheticColonist: []
   icon: "RMCJobIconSPPSynth"
   spawnMenuRoleName: SPP Airborne Synthetic (Trijent Special Survivor)
+  # Stories-SurvivorSpawnerFallback-Start
+  survivorSpawnerFallback:
+  - RMCSurvivorSPPCrashlandSoldier
+  # Stories-SurvivorSpawnerFallback-End
   special:
   - !type:AddComponentSpecial
     components:
@@ -23,6 +27,11 @@
     - type: JobPrefix
       prefix: rmc-job-prefix-crashland-synth
     - type: RMCSurvivor
+    # Stories-Synth-Start
+    - type: SynthGeneration
+      generation: RMCSynthGenThree
+      selectable: false
+    # Stories-Synth-End
     - type: Synth
   hidden: true
 
@@ -30,6 +39,7 @@
   parent: RMCGearSPPCrashlandBase
   id: RMCGearSPPCrashlandSynth
   equipment:
+    jumpsuit: STJumpsuitSPPCrashlandSynth # Stories-SynthSurvivorGear
     belt: RMCBeltMedicBagSPP
     outerClothing: RMCOuterClothingExternalWebbingSPPSurvivor
     head: CMHeadCapSPPBeret
@@ -45,6 +55,7 @@
     - RMCCableCoil
     - CMHealthAnalyzer
     - RMCSynthResetKeyNovaris
+    - RMCRadioHandheldColony # Stories-SynthSurvivorGear
     belt:
     - CMUpgradedTraumaKit10
     - CMUpgradedTraumaKit10

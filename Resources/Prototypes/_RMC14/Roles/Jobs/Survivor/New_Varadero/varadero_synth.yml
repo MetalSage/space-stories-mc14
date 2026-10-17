@@ -42,6 +42,11 @@
         - RMCSquadMarineVaradero
     - type: JobPrefix
       prefix: rmc-job-prefix-survivor-varadero-synth
+    # Stories-Synth-Start
+    - type: SynthGeneration
+      generation: RMCSynthGenThree
+      selectable: false
+    # Stories-Synth-End
     - type: Synth
   hidden: true
   medals:

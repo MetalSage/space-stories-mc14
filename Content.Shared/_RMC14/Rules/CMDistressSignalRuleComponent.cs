@@ -289,6 +289,7 @@ public sealed partial class CMDistressSignalRuleComponent : Component
         ("CMSurvivorSecurity", 2),
         ("CMSurvivorCorporate", 2),
         ("CMSurvivorScientist", 2),
+        ("RMCSyntheticColony", 1), // Stories-SynthSurvivor
         ("CMSurvivor", -1),
     };
 

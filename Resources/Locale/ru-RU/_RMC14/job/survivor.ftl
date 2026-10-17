@@ -33,6 +33,7 @@ rmc-playtime-tracker-job-name-survivor-scientist = Выживший учёный
 rmc-playtime-tracker-job-name-survivor-military = Выживший военнослужащий
 rmc-playtime-tracker-job-name-survivor-co = Выживший командир
 rmc-playtime-tracker-job-name-survivor-synth = Выживший синтетик
+rmc-playtime-tracker-job-name-survivor-clf = Выживший КОФ
 
 cm-job-name-survivor-trucker = Колонист-дальнобойщик
 
@@ -609,3 +610,27 @@ rmc-job-name-tyrargo-cet = Combat Engineering Technician
 rmc-job-prefix-tyrargo-cet = CET
 rmc-job-name-tyrargo-heavy-gunner = Heavy Gunner
 rmc-job-prefix-tyrargo-heavy-gunner = HVG
+
+# КОФ SURVIVORS
+
+rmc-job-name-clf-survivor-soldier = Партизан КОФ
+rmc-job-prefix-clf-survivor-soldier = GRL
+
+rmc-job-name-clf-survivor-medic = Полевой медик КОФ
+rmc-job-prefix-clf-survivor-medic = MED
+
+rmc-job-name-clf-survivor-engineer = Полевой техник КОФ
+rmc-job-prefix-clf-survivor-engineer = TECH
+
+rmc-job-name-clf-survivor-commander = Лидер ячейки КОФ
+rmc-job-prefix-clf-survivor-commander = LDR
+
+rmc-job-description-clf-survivor = Вы - член Колониального фронта освобождения, враждебного КМП США.
+
+rmc-job-greeting-clf-survivor = Вы - член КОФ, прибывший на назначенную встречу с сочувствующими колонистами, но вокруг стоит зловещая тишина.
+
+  Вы НЕ знаете об угрозе ксенонидов.
+
+  Вы НЕ знаете о морпехах и их намерениях.
+
+  Вы [bold][color=#ce1e1e][font size=16]ВРАЖДЕБНЫ к КМП США![/font][/color][/bold]

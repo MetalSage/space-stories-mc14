@@ -17,6 +17,13 @@
   - ColonistSynthShipside # Med, Engi, Synth
   roleWeight: 0.25
   basePlaytimeTracker: true
+  # Stories-SurvivorSpawnerFallback-Start
+  survivorSpawnerFallback:
+  - RMCSurvivorShivasPanicRoomResearcher
+  - RMCSurvivorShivasPanicRoomEngineer
+  - RMCSurvivorShivasPanicRoomDoctor
+  - RMCSurvivorShivasPanicRoomCivilian
+  # Stories-SurvivorSpawnerFallback-End
   special:
   - !type:AddComponentSpecial
     components:
@@ -34,8 +41,13 @@
     - type: IntelRescueSurvivorObjective
     - type: RMCSurvivor
     - type: MotionDetectorTracked
+    # Stories-Synth-Start
+    - type: SynthGeneration
+      generation: RMCSynthGenTwo
+      selectable: false
+    # Stories-Synth-End
     - type: Synth
-  hidden: true
+  hidden: false # Stories-SynthSurvivor
   useLoadoutOfJob: RMCSyntheticColony # for inheritance
 
 - type: startingGear
