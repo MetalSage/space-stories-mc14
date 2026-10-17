@@ -59,7 +59,7 @@ public sealed class GunBalanceSystem : EntitySystem
         if (Paused(ent) || TerminatingOrDeleted(ent) || TerminatingOrDeleted(args.Equipee))
             return;
 
-        if (_net.IsServer && MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
+        if (MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
             return;
 
         var delay = GetDrawDelay(ent);
@@ -80,7 +80,7 @@ public sealed class GunBalanceSystem : EntitySystem
         if (Paused(ent) || TerminatingOrDeleted(ent) || TerminatingOrDeleted(args.User))
             return;
 
-        if (_net.IsServer && MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
+        if (MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
             return;
 
         var delay = GetDrawDelay(ent);
@@ -157,7 +157,7 @@ public sealed class GunBalanceSystem : EntitySystem
         if (Paused(ent) || TerminatingOrDeleted(ent))
             return;
 
-        if (_net.IsServer && MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
+        if (MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
             return;
 
         ApplyMagazineCooldown(ent);
@@ -171,7 +171,7 @@ public sealed class GunBalanceSystem : EntitySystem
         if (Paused(ent) || TerminatingOrDeleted(ent))
             return;
 
-        if (_net.IsServer && MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
+        if (MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
             return;
 
         ApplyMagazineCooldown(ent);
@@ -237,7 +237,7 @@ public sealed class GunBalanceSystem : EntitySystem
 
     public void ApplyDrawDelay(Entity<GunComponent> ent)
     {
-        if (TerminatingOrDeleted(ent))
+        if (TerminatingOrDeleted(ent) || MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
             return;
 
         var curTime = _timing.CurTime;
@@ -271,7 +271,7 @@ public sealed class GunBalanceSystem : EntitySystem
 
     public void ApplyMagazineCooldown(Entity<GunComponent> ent)
     {
-        if (TerminatingOrDeleted(ent))
+        if (TerminatingOrDeleted(ent) || MetaData(ent).EntityLifeStage < EntityLifeStage.MapInitialized)
             return;
 
         var curTime = _timing.CurTime;

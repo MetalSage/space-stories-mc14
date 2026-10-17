@@ -185,7 +185,7 @@ public abstract partial class SharedGunSystem
         if (Paused(uid))
             return;
 
-        if (_netManager.IsServer && MetaData(uid).EntityLifeStage < EntityLifeStage.MapInitialized)
+        if (MetaData(uid).EntityLifeStage < EntityLifeStage.MapInitialized)
             return;
         // Stories-GunBalance-End
 
