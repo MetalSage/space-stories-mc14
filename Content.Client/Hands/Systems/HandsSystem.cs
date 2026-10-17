@@ -4,11 +4,13 @@ using Content.Client.DisplacementMap;
 using Content.Client.Examine;
 using Content.Client.Strip;
 using Content.Client.Verbs.UI;
+using Content.Shared._Stories.Weapons.Guns;
 using Content.Shared.Hands;
 using Content.Shared.Hands.Components;
 using Content.Shared.Hands.EntitySystems;
 using Content.Shared.Inventory.VirtualItem;
 using Content.Shared.Item;
+using Content.Shared.Weapons.Ranged.Components;
 using JetBrains.Annotations;
 using Robust.Client.GameObjects;
 using Robust.Client.Player;
@@ -16,6 +18,7 @@ using Robust.Client.UserInterface;
 using Robust.Shared.Containers;
 using Robust.Shared.GameStates;
 using Robust.Shared.Player;
+using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace Content.Client.Hands.Systems
@@ -24,6 +27,7 @@ namespace Content.Client.Hands.Systems
     public sealed class HandsSystem : SharedHandsSystem
     {
         [Dependency] private readonly IPlayerManager _playerManager = default!;
+        [Dependency] private readonly IGameTiming _timing = default!;
         [Dependency] private readonly IUserInterfaceManager _ui = default!;
 
         [Dependency] private readonly StrippableSystem _stripSys = default!;
@@ -142,6 +146,11 @@ namespace Content.Client.Hands.Systems
             if (switchHand && handName != hands.ActiveHandId && pressedEntity == null)
             {
                 // change active hand
+                // Stories-GunBalance-Start
+                var shooter = EnsureComp<MarineShooterComponent>(ent.Owner);
+                shooter.NextGlobalFire = _timing.CurTime + TimeSpan.FromSeconds(1.1);
+                shooter.LastFiredGun = null;
+                // Stories-GunBalance-End
                 RaisePredictiveEvent(new RequestSetHandEvent(handName));
                 return;
             }

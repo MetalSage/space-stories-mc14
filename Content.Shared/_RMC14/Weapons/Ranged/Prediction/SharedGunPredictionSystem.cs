@@ -1,10 +1,13 @@
-﻿using Content.Shared._RMC14.CCVar;
+using Content.Shared._RMC14.CCVar;
 using Content.Shared._RMC14.Vehicle;
+using Content.Shared._Stories.Weapons.Guns;
 using Content.Shared.CombatMode;
+using Content.Shared.Timing;
 using Content.Shared.Weapons.Ranged.Systems;
 using Robust.Shared.Configuration;
 using Robust.Shared.Map;
 using Robust.Shared.Player;
+using Robust.Shared.Timing;
 
 namespace Content.Shared._RMC14.Weapons.Ranged.Prediction;
 
@@ -13,7 +16,9 @@ public abstract class SharedGunPredictionSystem : EntitySystem
     [Dependency] private readonly SharedCombatModeSystem _combatMode = default!;
     [Dependency] private readonly IConfigurationManager _config = default!;
     [Dependency] private readonly SharedGunSystem _gun = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedTransformSystem _transform = default!;
+    [Dependency] private readonly UseDelaySystem _useDelay = default!;
     [Dependency] private readonly VehicleRideSurfaceSystem _rideSurface = default!;
 
     public bool GunPrediction { get; private set; }
@@ -36,6 +41,27 @@ public abstract class SharedGunPredictionSystem : EntitySystem
 
         if (ent != GetEntity(netGun))
             return null;
+
+        // Stories-GunBalance-Start
+        var curTime = _timing.CurTime;
+        if (gun.NextFire > curTime)
+            return null;
+
+        if (TryComp<UseDelayComponent>(ent, out var gunUseDelay) &&
+            (_useDelay.IsDelayed((ent, gunUseDelay), GunBalanceSystem.GunDrawDelayId) ||
+             _useDelay.IsDelayed((ent, gunUseDelay), GunBalanceSystem.GunMagazineDelayId) ||
+             _useDelay.IsDelayed((ent, gunUseDelay), "StoriesGunCycleModeDelay")))
+        {
+            return null;
+        }
+
+        if (TryComp<MarineShooterComponent>(user.Value, out var shooter) &&
+            shooter.NextGlobalFire > curTime &&
+            shooter.LastFiredGun != ent)
+        {
+            return null;
+        }
+        // Stories-GunBalance-End
 
         var shootCoordinates = GetCoordinates(coordinates);
         var targetUid = GetEntity(target);

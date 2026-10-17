@@ -1,5 +1,6 @@
 using System.Linq;
 using Content.Shared._RMC14.Hands;
+using Content.Shared._Stories.Weapons.Guns;
 using Content.Shared.Examine;
 using Content.Shared.Hands.Components;
 using Content.Shared.IdentityManagement;
@@ -7,6 +8,7 @@ using Content.Shared.Input;
 using Content.Shared.Interaction;
 using Content.Shared.Inventory.VirtualItem;
 using Content.Shared.Localizations;
+using Content.Shared.Weapons.Ranged.Components;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Map;
 using Robust.Shared.Network;
@@ -120,6 +122,25 @@ public abstract partial class SharedHandsSystem : EntitySystem
         if (_net.IsClient && _timing.IsFirstTimePredicted)
             RaisePredictiveEvent(new RequestSetHandEvent(nextHand));
         // TrySetActiveHand((session.AttachedEntity.Value, component), nextHand);
+
+        // Stories-GunBalance-Start
+        if (session?.AttachedEntity is { } user)
+        {
+            var shooter = EnsureComp<MarineShooterComponent>(user);
+            shooter.NextGlobalFire = _timing.CurTime + TimeSpan.FromSeconds(1.1);
+            shooter.LastFiredGun = null;
+
+            if (TryGetHeldItem((user, component), nextHand, out var nextHeld) &&
+                TryComp<GunComponent>(nextHeld, out var nextGun))
+            {
+                var minFire = _timing.CurTime + TimeSpan.FromSeconds(1.1);
+                if (nextGun.NextFire < minFire)
+                {
+                    nextGun.NextFire = minFire;
+                }
+            }
+        }
+        // Stories-GunBalance-End
     }
 
     private bool DropPressed(ICommonSession? session, EntityCoordinates coords, EntityUid netEntity)

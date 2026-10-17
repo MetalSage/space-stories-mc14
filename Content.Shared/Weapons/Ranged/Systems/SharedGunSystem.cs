@@ -5,12 +5,11 @@ using Content.Shared._RMC14.Attachable.Systems;
 using Content.Shared._RMC14.CCVar;
 using Content.Shared._RMC14.Emplacements;
 using Content.Shared._RMC14.Random;
+using Content.Shared._RMC14.Vehicle;
 using Content.Shared._RMC14.Weapons.Ranged;
 using Content.Shared._RMC14.Weapons.Ranged.Flamer;
 using Content.Shared._RMC14.Weapons.Ranged.Prediction;
-// RMC14
-using Content.Shared._RMC14.Vehicle;
-// RMC14
+using Content.Shared._Stories.Weapons.Guns;
 using Content.Shared.ActionBlocker;
 using Content.Shared.Actions;
 using Content.Shared.Administration.Logs;
@@ -26,7 +25,9 @@ using Content.Shared.Effects;
 using Content.Shared.Examine;
 using Content.Shared.Gravity;
 using Content.Shared.Hands;
+using Content.Shared.Hands.Components;
 using Content.Shared.Hands.EntitySystems;
+using Content.Shared.Inventory.VirtualItem;
 using Content.Shared.Popups;
 using Content.Shared.Projectiles;
 using Content.Shared.Stunnable;
@@ -85,7 +86,7 @@ public abstract partial class SharedGunSystem : EntitySystem
     [Dependency] protected readonly SharedTransformSystem TransformSystem = default!;
     [Dependency] protected readonly TagSystem TagSystem = default!;
     [Dependency] protected readonly ThrowingSystem ThrowingSystem = default!;
-    [Dependency] private   readonly UseDelaySystem _useDelay = default!;
+    [Dependency] protected readonly UseDelaySystem _useDelay = default!;
     [Dependency] private   readonly EntityWhitelistSystem _whitelistSystem = default!;
     [Dependency] private   readonly SharedStaminaSystem _stamina = default!;
     [Dependency] private   readonly SharedStunSystem _stun = default!;
@@ -135,6 +136,183 @@ public abstract partial class SharedGunSystem : EntitySystem
         SubscribeLocalEvent<GunComponent, MapInitEvent>(OnMapInit);
 
         Subs.CVar(_config, RMCCVars.RMCGunPrediction, v => GunPrediction = v, true);
+    }
+
+    // Stories-GunBalance-Start
+    [ValidatePrototypeId<TagPrototype>]
+    public static readonly ProtoId<TagPrototype> SidearmTag = "Sidearm";
+
+    public bool IsGunInHands(EntityUid user, EntityUid gun)
+    {
+        if (_hands.IsHolding(user, gun))
+            return true;
+
+        if (_attachableHolder.TryGetHolder(gun, out var holder) && _hands.IsHolding(user, holder))
+            return true;
+
+        if (TryComp<AssistedReloadReceiverComponent>(user, out var receiver) && receiver.Weapon == gun)
+            return true;
+
+        if (Containers.TryGetContainingContainer((gun, null), out var container))
+        {
+            if (TryComp<AssistedReloadReceiverComponent>(container.Owner, out var containerReceiver) &&
+                containerReceiver.Weapon == gun)
+            {
+                return true;
+            }
+
+            if (_hands.IsHolding(user, container.Owner))
+                return true;
+
+            if (HasComp<WeaponMountComponent>(container.Owner))
+                return true;
+        }
+
+        if (HasComp<WeaponMountComponent>(gun))
+            return true;
+
+        if (TryComp<MountableWeaponComponent>(gun, out var mountable) && mountable.MountedTo != null)
+            return true;
+
+        return false;
+    }
+
+    public bool HasOtherHandFree(EntityUid user, EntityUid weapon)
+    {
+        if (!TryComp<HandsComponent>(user, out var hands) || hands.Count < 2)
+            return false;
+
+        foreach (var held in _hands.EnumerateHeld(user))
+        {
+            if (held == weapon)
+                continue;
+
+            if (TryComp<VirtualItemComponent>(held, out var virt) && virt.BlockingEntity == weapon)
+                continue;
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public int GetGunAmmoCount(EntityUid gunUid)
+    {
+        var ev = new GetAmmoCountEvent();
+        RaiseLocalEvent(gunUid, ref ev);
+        return ev.Count;
+    }
+
+    public bool HasShootableAmmo(EntityUid gunUid)
+    {
+        if (TryComp<RevolverAmmoProviderComponent>(gunUid, out var revolver))
+        {
+            return GetRevolverUnspentCount(revolver) > 0;
+        }
+
+        if (TryComp<MagazineAmmoProviderComponent>(gunUid, out _))
+        {
+            if (Containers.TryGetContainer(gunUid, "gun_chamber", out var chamberContainer))
+            {
+                foreach (var ent in chamberContainer.ContainedEntities)
+                {
+                    if (!TryComp<CartridgeAmmoComponent>(ent, out var c) || !c.Spent)
+                        return true;
+                }
+            }
+
+            if (GetMagazineEntity(gunUid) is { } magEnt)
+            {
+                if (TryComp<BallisticAmmoProviderComponent>(magEnt, out var ballistic))
+                {
+                    if (ballistic.UnspawnedCount > 0)
+                        return true;
+
+                    foreach (var ent in ballistic.Entities)
+                    {
+                        if (!TryComp<CartridgeAmmoComponent>(ent, out var c) || !c.Spent)
+                            return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        if (TryComp<BallisticAmmoProviderComponent>(gunUid, out var ballisticGun))
+        {
+            if (ballisticGun.UnspawnedCount > 0)
+                return true;
+
+            foreach (var ent in ballisticGun.Entities)
+            {
+                if (!TryComp<CartridgeAmmoComponent>(ent, out var c) || !c.Spent)
+                    return true;
+            }
+
+            return false;
+        }
+
+        if (TryComp<ChamberMagazineAmmoProviderComponent>(gunUid, out var chamberMag))
+        {
+            if (GetChamberEntity(gunUid) is { } chamberEnt &&
+                (!TryComp<CartridgeAmmoComponent>(chamberEnt, out var c) || !c.Spent))
+            {
+                return true;
+            }
+
+            if (GetMagazineEntity(gunUid) is { } magEntity)
+            {
+                var ev = new GetAmmoCountEvent();
+                RaiseLocalEvent(magEntity, ref ev);
+                if (ev.Count > 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        var ammoEv = new GetAmmoCountEvent();
+        RaiseLocalEvent(gunUid, ref ammoEv);
+        return ammoEv.Count > 0;
+    }
+
+    public bool TryGetAkimboGuns(EntityUid gunUid, out Entity<AkimboComponent> akimboGun, out Entity<AkimboComponent> otherAkimboGun)
+    {
+        akimboGun = default;
+        otherAkimboGun = default;
+
+        if (!TryComp(gunUid, out AkimboComponent? akimboComp))
+            return false;
+
+        akimboGun = (gunUid, akimboComp);
+
+        var parent = Transform(gunUid).ParentUid;
+        if (!parent.IsValid() || !TryComp(parent, out HandsComponent? handsComp))
+            return false;
+
+        foreach (var hand in handsComp.Hands.Keys)
+        {
+            if (_hands.GetHeldItem(parent, hand) is { } held &&
+                held != gunUid &&
+                TryComp(held, out AkimboComponent? otherComp))
+            {
+                otherAkimboGun = (held, otherComp);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool HasAkimboGuns(EntityUid currentGun)
+    {
+        return TryGetAkimboGuns(currentGun, out _, out _);
+    }
+
+    public bool HasDualPistols(EntityUid currentGun)
+    {
+        return HasAkimboGuns(currentGun);
     }
 
     private void OnMapInit(Entity<GunComponent> gun, ref MapInitEvent args)
@@ -234,6 +412,46 @@ public abstract partial class SharedGunSystem : EntitySystem
         {
             gunEntity = held;
             gunComp = gun;
+
+            // Stories-Akimbo-Start
+            if (TryGetAkimboGuns(held, out var akimbo, out var otherAkimbo) &&
+                TryComp<GunComponent>(otherAkimbo.Owner, out var otherGunComp))
+            {
+                var curTime = Timing.CurTime;
+                var activeReady = gun.NextFire <= curTime;
+                var otherReady = otherGunComp.NextFire <= curTime;
+                var activeHasAmmo = HasShootableAmmo(held);
+                var otherHasAmmo = HasShootableAmmo(otherAkimbo.Owner);
+
+                if (activeHasAmmo && !otherHasAmmo)
+                {
+                    gunEntity = held;
+                    gunComp = gun;
+                }
+                else if (!activeHasAmmo && otherHasAmmo)
+                {
+                    gunEntity = otherAkimbo.Owner;
+                    gunComp = otherGunComp;
+                }
+                else if (activeHasAmmo && otherHasAmmo)
+                {
+                    if (!activeReady && otherReady)
+                    {
+                        gunEntity = otherAkimbo.Owner;
+                        gunComp = otherGunComp;
+                    }
+                    else if (activeReady && otherReady && TryComp<MarineShooterComponent>(entity, out var shooterComp))
+                    {
+                        if (shooterComp.LastFiredGun == held)
+                        {
+                            gunEntity = otherAkimbo.Owner;
+                            gunComp = otherGunComp;
+                        }
+                    }
+                }
+            }
+            // Stories-Akimbo-End
+
             return true;
         }
 
@@ -508,6 +726,24 @@ public abstract partial class SharedGunSystem : EntitySystem
 
         var shotEv = new GunShotEvent(user, ev.Ammo, fromCoordinates, toCoordinates.Value);
         RaiseLocalEvent(gunUid, ref shotEv);
+
+        // Stories-MarineShooter-Start
+        var shooter = EnsureComp<MarineShooterComponent>(user);
+        shooter.LastFiredGun = gunUid;
+
+        if (TryGetAkimboGuns(gunUid, out var akimbo, out _))
+        {
+            var baseDelay = 1f / Math.Max(gun.FireRateModified, 0.1f);
+            var gunDelay = TimeSpan.FromSeconds(baseDelay / akimbo.Comp.IndividualFireRateMultiplier);
+            var marineDelay = TimeSpan.FromSeconds(baseDelay / akimbo.Comp.TotalFireRateMultiplier);
+
+            gun.NextFire = curTime + gunDelay;
+            shooter.NextGlobalFire = curTime + marineDelay;
+            DirtyField(gunUid, gun, nameof(GunComponent.NextFire));
+        }
+
+        Dirty(user, shooter);
+        // Stories-MarineShooter-End
 
         if (userImpulse && TryComp<PhysicsComponent>(user, out var userPhysics))
         {
@@ -858,9 +1094,15 @@ public abstract partial class SharedGunSystem : EntitySystem
     private Angle GetRecoilAngle(TimeSpan curTime, GunComponent component, Angle direction)
     {
         var timeSinceLastFire = (curTime - component.LastFire).TotalSeconds;
-        var newTheta = MathHelper.Clamp(component.CurrentAngle.Theta + component.AngleIncreaseModified.Theta - component.AngleDecayModified.Theta * timeSinceLastFire, component.MinAngleModified.Theta, component.MaxAngleModified.Theta);
+        // Stories-GunSpread-Start
+        var currentTheta = component.CurrentAngle.Theta;
+        if (timeSinceLastFire > 0.6)
+            currentTheta = component.MinAngleModified.Theta;
+
+        var newTheta = MathHelper.Clamp(currentTheta + component.AngleIncreaseModified.Theta - component.AngleDecayModified.Theta * timeSinceLastFire, component.MinAngleModified.Theta, component.MaxAngleModified.Theta);
         component.CurrentAngle = new Angle(newTheta);
         component.LastFire = component.NextFire;
+        // Stories-GunSpread-End
 
         // Convert it so angle can go either side.
         long tick = Timing.CurTick.Value;
@@ -868,8 +1110,15 @@ public abstract partial class SharedGunSystem : EntitySystem
         tick = tick | (uint) GetNetEntity(component.Owner).Id;
         var random = new Xoroshiro64S(tick).NextFloat(-0.5f, 0.5f);
         var spread = component.CurrentAngle.Theta * random;
-        var angle = new Angle(direction.Theta + component.CurrentAngle.Theta * random);
-        DebugTools.Assert(spread <= component.MaxAngleModified.Theta);
+
+        // Stories-Akimbo-Start
+        if (TryGetAkimboGuns(component.Owner, out var akimbo, out _))
+        {
+            spread *= akimbo.Comp.ScatterMultiplier;
+        }
+        // Stories-Akimbo-End
+
+        var angle = new Angle(direction.Theta + spread);
         return angle;
     }
 

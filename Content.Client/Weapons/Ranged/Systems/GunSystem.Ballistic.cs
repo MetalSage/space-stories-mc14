@@ -1,6 +1,9 @@
 using Content.Client.Stack;
+using Content.Shared.Weapons.Ranged;
 using Content.Shared.Weapons.Ranged.Components;
 using Content.Shared.Weapons.Ranged.Events;
+using Content.Shared.Weapons.Ranged.Systems;
+using Robust.Client.GameObjects;
 using Robust.Shared.Map;
 
 namespace Content.Client.Weapons.Ranged.Systems;
@@ -13,13 +16,37 @@ public sealed partial class GunSystem
     {
         base.InitializeBallistic();
         SubscribeLocalEvent<BallisticAmmoProviderComponent, UpdateAmmoCounterEvent>(OnBallisticAmmoCount);
+        // Stories-RMCAmmoEject-Start
+        SubscribeLocalEvent<BallisticAmmoProviderComponent, AfterAutoHandleStateEvent>(OnBallisticHandleState);
+        SubscribeLocalEvent<BallisticAmmoProviderComponent, AppearanceChangeEvent>(OnBallisticAppearance);
+        // Stories-RMCAmmoEject-End
     }
+
+    // Stories-RMCAmmoEject-Start
+    private void OnBallisticHandleState(EntityUid uid, BallisticAmmoProviderComponent component, ref AfterAutoHandleStateEvent args)
+    {
+        UpdateAmmoCount(uid, prediction: false);
+    }
+
+    private void OnBallisticAppearance(EntityUid uid, BallisticAmmoProviderComponent component, ref AppearanceChangeEvent args)
+    {
+        UpdateAmmoCount(uid, prediction: false);
+    }
+    // Stories-RMCAmmoEject-End
 
     private void OnBallisticAmmoCount(EntityUid uid, BallisticAmmoProviderComponent component, UpdateAmmoCounterEvent args)
     {
         if (args.Control is DefaultStatusControl control)
         {
-            control.Update(GetBallisticShots(component) + args.ArtificialIncrease, component.Capacity);
+            var count = GetBallisticShots(component);
+            // Stories-RMCAmmoEject-Start
+            if (TryComp<AppearanceComponent>(uid, out var appearance) &&
+                Appearance.TryGetData<int>(uid, AmmoVisuals.AmmoCount, out var appCount, appearance))
+            {
+                count = appCount;
+            }
+            // Stories-RMCAmmoEject-End
+            control.Update(count + args.ArtificialIncrease, component.Capacity);
         }
     }
 
@@ -38,6 +65,7 @@ public sealed partial class GunSystem
 
             Containers.Remove(existing, component.Container);
             EnsureShootable(existing);
+            ent = existing; // Stories-BallisticCyclePredictionFix
         }
         else if (component.UnspawnedCount > 0)
         {
