@@ -22,8 +22,20 @@ jobs:
         cd RobustToolbox
         git fetch --depth=1
 
+    - name: Check if patch secret exists
+      id: check_patch
+      env:
+        SECRET_PATCH: ${{ secrets.SECRET_PATCH }}
+      shell: bash
+      run: |
+        if [ -n "$SECRET_PATCH" ]; then
+          echo "has_patch=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_patch=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Apply build patch
-      if: ${{ secrets.SECRET_PATCH != '' }}
+      if: steps.check_patch.outputs.has_patch == 'true'
       env:
         SECRET_PATCH: ${{ secrets.SECRET_PATCH }}
       shell: bash
@@ -75,4 +87,3 @@ jobs:
       run: |
         git checkout .
         git clean -fd
-
