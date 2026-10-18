@@ -183,12 +183,18 @@ public abstract partial class SharedGunSystem : EntitySystem
         if (!TryComp<HandsComponent>(user, out var hands) || hands.Count < 2)
             return false;
 
+        var weaponHolder = weapon;
+        if (_attachableHolder.TryGetHolder(weapon, out var holder))
+            weaponHolder = holder.Value;
+        else if (Containers.TryGetContainingContainer((weapon, null), out var container) && _hands.IsHolding(user, container.Owner))
+            weaponHolder = container.Owner;
+
         foreach (var held in _hands.EnumerateHeld(user))
         {
-            if (held == weapon)
+            if (held == weaponHolder || held == weapon)
                 continue;
 
-            if (TryComp<VirtualItemComponent>(held, out var virt) && virt.BlockingEntity == weapon)
+            if (TryComp<VirtualItemComponent>(held, out var virt) && (virt.BlockingEntity == weaponHolder || virt.BlockingEntity == weapon))
                 continue;
 
             return false;

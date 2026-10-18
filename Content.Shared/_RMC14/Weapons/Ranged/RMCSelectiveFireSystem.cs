@@ -143,8 +143,10 @@ public sealed class RMCSelectiveFireSystem : EntitySystem
             return true;
         }
 
-        // Stories-SelectiveFireSpread-Start: SemiAuto defaults to FullAuto characteristics if available
-        if (mode == SelectiveFire.SemiAuto && gun.Comp.Modifiers.TryGetValue(SelectiveFire.FullAuto, out var fullAutoMods))
+        // Stories-SelectiveFireSpread-Start
+        if (mode == SelectiveFire.SemiAuto &&
+            gun.Comp.BaseFireModes.HasFlag(SelectiveFire.FullAuto) &&
+            gun.Comp.Modifiers.TryGetValue(SelectiveFire.FullAuto, out var fullAutoMods))
         {
             modifiers = fullAutoMods;
             return true;

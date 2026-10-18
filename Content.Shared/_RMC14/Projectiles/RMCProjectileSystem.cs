@@ -224,7 +224,7 @@ public sealed class RMCProjectileSystem : EntitySystem
 
         var coordinates = transform.Coordinates;
         if (ent.Comp.Origin is { } origin &&
-            coordinates.TryDelta(EntityManager, _transform, origin, out var delta))
+            origin.TryDelta(EntityManager, _transform, coordinates, out var delta))
         {
             var deltaLength = delta.Length();
 

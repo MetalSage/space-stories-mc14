@@ -68,7 +68,16 @@ namespace Content.Client.Options.UI.Tabs
 
         public const string RmcXenoCategoryHeader = "ui-options-header-rmc-xeno";
 
-        public static readonly HashSet<BoundKeyFunction> AllowedDuplicateFunctions = new();
+        public static readonly HashSet<BoundKeyFunction> AllowedDuplicateFunctions = new()
+        {
+            ContentKeyFunctions.ArcadeUp,
+            ContentKeyFunctions.ArcadeDown,
+            ContentKeyFunctions.ArcadeLeft,
+            ContentKeyFunctions.ArcadeRight,
+            ContentKeyFunctions.Arcade1,
+            ContentKeyFunctions.Arcade2,
+            ContentKeyFunctions.Arcade3,
+        };
         private readonly HashSet<BoundKeyFunction> _unrestrictedFunctions = new();
         private readonly HashSet<BoundKeyFunction> _rmcHumanFunctions = new();
         private readonly HashSet<BoundKeyFunction> _rmcXenoFunctions = new();
@@ -857,6 +866,7 @@ namespace Content.Client.Options.UI.Tabs
                 return;
             }
 
+            var conflictingBindings = new List<IKeyBinding>();
             if (!isDefaultBindingForTarget && !duplicateAllowed)
             {
                 var inputMods = mods.Where(m => m != Keyboard.Key.Unknown).ToHashSet();
@@ -878,10 +888,7 @@ namespace Content.Client.Options.UI.Tabs
                     if (!inputMods.SetEquals(existingMods))
                         continue;
 
-                    // Collision!
-                    SetButtonOccupied(_currentlyRebinding);
-                    _currentlyRebinding = null;
-                    return;
+                    conflictingBindings.Add(existing);
                 }
             }
             // Stories-KeyRebind-End
@@ -907,6 +914,11 @@ namespace Content.Client.Options.UI.Tabs
                            || key == Keyboard.Key.MouseMiddle,
                 CanRepeat = false
             };
+
+            foreach (var conflict in conflictingBindings)
+            {
+                _inputManager.RemoveBinding(conflict);
+            }
 
             if (_currentlyRebinding.Binding != null)
             {
@@ -1183,7 +1195,7 @@ namespace Content.Client.Options.UI.Tabs
 
             // Disable any active bindings that violate restrictions (e.g. non-default MouseLeft / MouseRight),
             // but do NOT delete them from keybinds.yml or user preferences.
-            foreach (var binding in inputManager.AllBindings)
+            foreach (var binding in inputManager.AllBindings.ToList())
             {
                 if (binding.BaseKey == Keyboard.Key.MouseLeft || binding.BaseKey == Keyboard.Key.MouseRight)
                 {

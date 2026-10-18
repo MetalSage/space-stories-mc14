@@ -25,6 +25,7 @@
   # Stories-SynthHeavyGrab-Start
   - type: Tag
     tags:
+    - DoorBumpOpener
     - RMCSynthGrabbable
   - type: FiremanCarriable
     canThrow: true

@@ -56,6 +56,7 @@
     thresholds:
       0: Alive
       650: Critical
+      750: Dead
   - type: RMCKeybindActions
     actions:
       XenoPrimaryOne: [ STActionXenoDespoilerAcidBarrage ]

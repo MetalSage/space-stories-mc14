@@ -174,10 +174,11 @@ namespace Content.Shared.Interaction
         private void OnBoundInterfaceInteractAttempt(Entity<UserInterfaceComponent> ent, ref BoundUserInterfaceMessageAttempt ev)
         {
             _uiQuery.TryComp(ev.Target, out var aUiComp);
+            var isAllowedGhostDialog = HasComp<GhostComponent>(ev.Actor) && Equals(ev.UiKey, Content.Shared._RMC14.Dialog.DialogUiKey.Key); // Stories-GhostDialog
             if (!_actionBlockerSystem.CanInteract(ev.Actor, ev.Target))
             {
                 // We permit ghosts to open uis unless explicitly blocked
-                if (ev.Message is not OpenBoundInterfaceMessage
+                if ((ev.Message is not OpenBoundInterfaceMessage && !isAllowedGhostDialog) // Stories-GhostDialog
                     || !HasComp<GhostComponent>(ev.Actor)
                     || aUiComp?.BlockSpectators == true)
                 {
@@ -185,6 +186,9 @@ namespace Content.Shared.Interaction
                     return;
                 }
             }
+
+            if (isAllowedGhostDialog && ev.Actor == ev.Target) // Stories-GhostDialog
+                return;
 
             var range = _ui.GetUiRange(ev.Target, ev.UiKey);
 

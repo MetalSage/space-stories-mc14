@@ -423,10 +423,10 @@ public abstract class SharedRMCFlamerSystem : EntitySystem
         if (delta.IsLengthZero())
             return false;
 
-        var normalized = -delta.Normalized();
+        var direction = (-delta).Normalized();
 
         // to prevent hitting yourself
-        fromCoordinates = fromCoordinates.Offset(normalized * 0.23f);
+        fromCoordinates = fromCoordinates.Offset(-direction * 0.23f);
 
         reagent = _reagent.Index(firstReagent.Value.Reagent.Prototype);
 
@@ -434,7 +434,7 @@ public abstract class SharedRMCFlamerSystem : EntitySystem
         var range = Math.Min((fuelVolume / flamer.Comp.CostPer).Int(), maxRange); // Stories-Ordnance
 
         if (delta.Length() > maxRange)
-            toCoordinates = fromCoordinates.Offset(normalized * range);
+            toCoordinates = fromCoordinates.Offset(direction * range);
 
         tiles = _line.DrawLine(fromCoordinates, toCoordinates, flamer.Comp.DelayPer, maxRange, out _, true, reagent.FireSpread);
         if (tiles.Count == 0)
