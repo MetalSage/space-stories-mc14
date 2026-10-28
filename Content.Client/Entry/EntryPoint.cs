@@ -220,6 +220,7 @@ namespace Content.Client.Entry
             _discordAuthManager.Initialize(); // Stories-DiscordAuth
             _documentParsingManager.Initialize();
             _titleWindowManager.Initialize();
+            _playbackMan.SnapshotInitialNetMessages();
 
             _baseClient.RunLevelChanged += (_, args) =>
             {
@@ -245,6 +246,7 @@ namespace Content.Client.Entry
                 && _resourceManager.ContentFileExists(
                     ReplayConstants.ReplayZipFolder.ToRootedPath() / ReplayConstants.FileMeta))
             {
+                _configManager.SetCVar(CVars.LaunchContentBundle, false);
                 _logManager.GetSawmill("entry").Info("Loading content bundle replay from VFS!");
 
                 var reader = new ReplayFileReaderResources(

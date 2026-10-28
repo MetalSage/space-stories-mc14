@@ -47,6 +47,11 @@ public sealed class ContentReplayPlaybackManager
     [Dependency] private readonly IBaseClient _client = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
     [Dependency] private readonly IResourceManager _resMan = default!;
+    [Dependency] private readonly Robust.Shared.Network.IClientNetManager _netMan = default!;
+    [Dependency] private readonly Robust.Shared.Log.ILogManager _logMan = default!;
+
+    private Robust.Shared.Log.ISawmill _sawmill = default!;
+    private HashSet<string>? _initialNetMessages;
 
     /// <summary>
     /// UI state to return to when stopping a replay or loading fails.
@@ -70,6 +75,7 @@ public sealed class ContentReplayPlaybackManager
             return;
 
         _initialized = true;
+        _sawmill = _logMan.GetSawmill("replay.playback");
         _playback.HandleReplayMessage += OnHandleReplayMessage;
         _playback.ReplayPlaybackStopped += OnReplayPlaybackStopped;
         _playback.ReplayPlaybackStarted += OnReplayPlaybackStarted;
@@ -95,6 +101,8 @@ public sealed class ContentReplayPlaybackManager
         if (_client.RunLevel == ClientRunLevel.SinglePlayerGame)
             _client.StopSinglePlayer();
 
+        ResetNetMessagesToSnapshot();
+
         Action? retryAction = null;
         Action? cancelAction = null;
 
@@ -103,6 +111,7 @@ public sealed class ContentReplayPlaybackManager
             retryAction = () =>
             {
                 _cfg.SetCVar(CVars.ReplayIgnoreErrors, true);
+                ResetNetMessagesToSnapshot();
 
                 IReplayFileReader reader = last.Zip == null
                     ? new ReplayFileReaderResources(_resMan, last.Folder)
@@ -118,6 +127,13 @@ public sealed class ContentReplayPlaybackManager
             cancelAction = () =>
             {
                 _stateMan.RequestStateChange(DefaultState);
+            };
+        }
+        else
+        {
+            cancelAction = () =>
+            {
+                ReturnToDefaultState();
             };
         }
 
@@ -137,6 +153,57 @@ public sealed class ContentReplayPlaybackManager
 
         if (_client.RunLevel == ClientRunLevel.SinglePlayerGame)
             _client.StopSinglePlayer();
+
+        ResetNetMessagesToSnapshot();
+    }
+
+    public void SnapshotInitialNetMessages()
+    {
+        try
+        {
+            var field = _netMan.GetType().GetField("_messages", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (field?.GetValue(_netMan) is System.Collections.IDictionary dict)
+            {
+                _initialNetMessages = new HashSet<string>();
+                foreach (var key in dict.Keys)
+                {
+                    if (key is string s)
+                        _initialNetMessages.Add(s);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _sawmill.Warning($"Failed to snapshot initial net messages: {e}");
+        }
+    }
+
+    public void ResetNetMessagesToSnapshot()
+    {
+        try
+        {
+            var field = _netMan.GetType().GetField("_messages", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (field?.GetValue(_netMan) is System.Collections.IDictionary dict && _initialNetMessages != null)
+            {
+                var toRemove = new List<string>();
+                foreach (var key in dict.Keys)
+                {
+                    if (key is string s && !_initialNetMessages.Contains(s))
+                    {
+                        toRemove.Add(s);
+                    }
+                }
+
+                foreach (var key in toRemove)
+                {
+                    dict.Remove(key);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _sawmill.Warning($"Failed to reset net messages: {e}");
+        }
     }
 
     private void OnCheckpointReset()
