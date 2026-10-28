@@ -220,7 +220,6 @@ namespace Content.Client.Entry
             _discordAuthManager.Initialize(); // Stories-DiscordAuth
             _documentParsingManager.Initialize();
             _titleWindowManager.Initialize();
-            _playbackMan.SnapshotInitialNetMessages();
 
             _baseClient.RunLevelChanged += (_, args) =>
             {
